@@ -21,11 +21,19 @@ class _SignUpState extends State<SignUp> {
       isLoding = true;
     });
 
-    AuthMethods().signUpWithEmailAndPassword(
-        usernameTextEdittingController.text,
-        emailTextEdittingController.text,
-        passwordTextEdittingController.text,
-        context);
+    AuthMethods()
+        .signUpWithEmailAndPassword(
+            usernameTextEdittingController.text,
+            emailTextEdittingController.text,
+            passwordTextEdittingController.text,
+            context)
+        .then((isSuccess) {
+      if (!isSuccess) {
+        setState(() {
+          isLoding = false;
+        });
+      }
+    });
   }
 
   @override

@@ -15,4 +15,8 @@ class DatabaseMethods {
         .where("username", isEqualTo: username)
         .get();
   }
+
+  Future<DocumentSnapshot> getUserUsername(String uid) {
+    return FirebaseFirestore.instance.collection("users").doc(uid).get();
+  }
 }
