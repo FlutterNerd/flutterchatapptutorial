@@ -50,7 +50,8 @@ class _SearchState extends State<Search> {
                     itemBuilder: (context, index) {
                       return Row(
                         children: [
-                          SearchUserTile(querySnapshot.docs[index]["email"])
+                          SearchUserTile(querySnapshot.docs[index]["email"],
+                              querySnapshot.docs[index]["username"])
                         ],
                       );
                     },
@@ -64,8 +65,8 @@ class _SearchState extends State<Search> {
 }
 
 class SearchUserTile extends StatelessWidget {
-  final String email;
-  SearchUserTile(this.email);
+  final String email, username;
+  SearchUserTile(this.email, this.username);
 
   @override
   Widget build(BuildContext context) {
@@ -74,7 +75,14 @@ class SearchUserTile extends StatelessWidget {
       padding: EdgeInsets.symmetric(vertical: 16),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [Text(email), Icon(Icons.message)],
+        children: [
+          Text(email),
+          GestureDetector(
+              onTap: () {
+                DatabaseMethods().checkIfChatRoomExists(username);
+              },
+              child: Icon(Icons.message))
+        ],
       ),
     );
   }

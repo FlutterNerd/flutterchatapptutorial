@@ -41,6 +41,9 @@ class _HomeState extends State<Home> {
           )
         ],
       ),
+      body: Container(
+        child: SearchUserTile("email", "eaills"),
+      ),
       floatingActionButton: FloatingActionButton(
         child: Icon(Icons.search),
         onPressed: () {
