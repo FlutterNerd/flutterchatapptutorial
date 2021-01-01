@@ -18,31 +18,36 @@ class DatabaseMethods {
   }
 
   Future<DocumentSnapshot> getUserUsername(String uid) {
+    print("GETTING USERID FOR UID ${uid}");
     return FirebaseFirestore.instance.collection("users").doc(uid).get();
   }
 
-  checkIfChatRoomExists(String usernameSearching) async {
-    String myUsername = await SharedPreferenceHelper().getUserName();
+  Future checkIfChatRoomExists(String chatRoomId) async {
+    return await FirebaseFirestore.instance
+        .collection("chatrooms")
+        .doc(chatRoomId)
+        .get();
+  }
 
-    if (myUsername != usernameSearching) {
-      FirebaseFirestore.instance
-          .collection("chatrooms")
-          .where("users", arrayContains: [usernameSearching, myUsername])
-          .get()
-          .then((querySnapshot) {
-            try {
-              if (querySnapshot.docs.isEmpty) {
-                print("chat room already exixts");
-              } else {
-                print(
-                    "chat room does not  exixts for $usernameSearching $myUsername");
-                //createChatroom(usernameSearching);
-              }
-            } catch (error) {
-              print("chat room does not  exixts $error");
-            }
-          });
-    }
+  Future createChatRoom(String chatRoomId, Map chatRoomData) {
+    return FirebaseFirestore.instance
+        .collection("chatrooms")
+        .doc(chatRoomId)
+        .set(chatRoomData)
+        .catchError((eroor) {
+      print(eroor);
+    });
+  }
+
+  Future addAMessage(String chatRoomId, Map messageData) {
+    return FirebaseFirestore.instance
+        .collection("chatrooms")
+        .doc(chatRoomId)
+        .collection("chats")
+        .add(messageData)
+        .catchError((eroor) {
+      print(eroor);
+    });
   }
 
   createChatroom(String usernameSearching) async {
@@ -53,5 +58,29 @@ class DatabaseMethods {
       "last_message_ts": DateTime.now(),
       "user": [usernameSearching, myUsername]
     });
+  }
+
+  Future<Stream> getChatMessages(String chatRoomId) async {
+    return FirebaseFirestore.instance
+        .collection("chatrooms")
+        .doc(chatRoomId)
+        .collection("chats")
+        .orderBy("time", descending: true)
+        .snapshots();
+  }
+
+  Future<Stream> getMyChats() async {
+    String myName = await SharedPreferenceHelper().getUserName();
+    return FirebaseFirestore.instance
+        .collection("chatrooms")
+        .where("users", arrayContains: myName)
+        .snapshots();
+  }
+
+  updateLastMessage(String chatRoomId, Map updatedData) {
+    FirebaseFirestore.instance
+        .collection("chatrooms")
+        .doc(chatRoomId)
+        .update(updatedData);
   }
 }

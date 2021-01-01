@@ -18,22 +18,24 @@ class AuthMethods {
 
   signInWithEmailAndPassword(
       String email, String password, BuildContext context) async {
-    UserCredential userCredential = await _auth.signInWithEmailAndPassword(
-        email: email, password: password);
+    //UserCredential userCredential =
+    await _auth
+        .signInWithEmailAndPassword(email: email, password: password)
+        .then((userCredential) async {
+      User user = userCredential.user;
 
-    User user = userCredential.user;
+      DocumentSnapshot documentSnapshot =
+          await DatabaseMethods().getUserUsername(user.uid);
+      SharedPreferenceHelper()
+          .saveUserName(documentSnapshot.data()["username"]);
+      SharedPreferenceHelper().saveUserEmail(user.email);
+      SharedPreferenceHelper().saveIsLoggedIn(true);
 
-    DocumentSnapshot documentSnapshot;
-    await DatabaseMethods().getUserUsername(user.uid).then((value) {
-      documentSnapshot = value;
-      print('Username1:${documentSnapshot.get("username")}');
-      print('Username2:${documentSnapshot["username"]}');
+      Navigator.pushReplacement(
+          context, MaterialPageRoute(builder: (context) => Home()));
+    }).catchError((error) {
+      print(error);
     });
-    SharedPreferenceHelper().saveUserEmail(user.email);
-    SharedPreferenceHelper().saveIsLoggedIn(true);
-
-    Navigator.pushReplacement(
-        context, MaterialPageRoute(builder: (context) => Home()));
   }
 
   // sign up function & save data to shared preference

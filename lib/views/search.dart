@@ -1,6 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:flutterchatapptutorial/helping_functions/shared_pre_helper.dart';
 import 'package:flutterchatapptutorial/services/database.dart';
+import 'package:flutterchatapptutorial/views/chat_screen.dart';
 
 class Search extends StatefulWidget {
   @override
@@ -68,6 +70,45 @@ class SearchUserTile extends StatelessWidget {
   final String email, username;
   SearchUserTile(this.email, this.username);
 
+  Future<String> getChatRoomId(String searchUsername) async {
+    String myUsername = await SharedPreferenceHelper().getUserName();
+    if (myUsername.substring(0).codeUnitAt(0) >
+        searchUsername.substring(0).codeUnitAt(0)) {
+      return "${searchUsername}_$myUsername";
+    } else {
+      return "${myUsername}_$searchUsername";
+    }
+  }
+
+  Future createAChatRoom(String username, String chatRoomId) async {
+    String myUsername = await SharedPreferenceHelper().getUserName();
+    List<String> users = [username, myUsername];
+
+    Map<String, dynamic> chatRoomData = {"users": users};
+
+    await DatabaseMethods().createChatRoom(chatRoomId, chatRoomData);
+    sendAMessage(myUsername, chatRoomId);
+  }
+
+  sendAMessage(String myUsername, String chatRoomId) async {
+    var ts = DateTime.now();
+    Map<String, dynamic> messageData = {
+      "message": "Hey",
+      "sendBy": myUsername,
+      "time": ts
+    };
+
+    await DatabaseMethods().addAMessage(chatRoomId, messageData);
+
+    Map<String, dynamic> updatedData = {
+      "last_message": "hey",
+      "sendBy": myUsername,
+      "last_message_ts": ts
+    };
+
+    await DatabaseMethods().updateLastMessage(chatRoomId, updatedData);
+  }
+
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -78,8 +119,31 @@ class SearchUserTile extends StatelessWidget {
         children: [
           Text(email),
           GestureDetector(
-              onTap: () {
-                DatabaseMethods().checkIfChatRoomExists(username);
+              onTap: () async {
+                String chatRoomId = await getChatRoomId(username);
+                DatabaseMethods()
+                    .checkIfChatRoomExists(chatRoomId)
+                    .then((value) async {
+                  DocumentSnapshot documentSnapshot = value;
+                  if (documentSnapshot.data() != null) {
+                    print("chat room exists");
+                    // send user to chat screen
+                    Navigator.pushReplacement(
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) => ChatScreen(chatRoomId)));
+                  } else {
+                    print("chat roo does not exists");
+
+                    await createAChatRoom(username, chatRoomId);
+
+                    // send user to chat screen
+                    Navigator.pushReplacement(
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) => ChatScreen(chatRoomId)));
+                  }
+                });
               },
               child: Icon(Icons.message))
         ],
